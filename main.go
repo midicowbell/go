@@ -1,9 +1,13 @@
 package main
 
 import (
-	"study/simulator"
+	"smartHome/smarthome"
 )
 
 func main() {
-	simulator.Play()
+	lamp := smarthome.Lamp{}
+	cond := smarthome.AirConditioner{}
+	smarthome.ManageDevice(lamp)
+	smarthome.ManageDevice(cond)
+
 }
