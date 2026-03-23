@@ -21,15 +21,15 @@ func (c Settlement) StatusReport() {
 
 func (c *Settlement) ApplyEvent(sub int64) {
 	if sub == 0 {
-		died := rand.Int63n(250)
+		died := rand.Int63n(10)
 		fmt.Printf("В поселении засуха! Умерло %d человек\n", died)
-		c.Resources -= died
+		c.Population -= died
 	} else if sub == 1 {
-		new1 := rand.Int63n(250)
+		new1 := rand.Int63n(30)
 		fmt.Printf("В поселение прибыли беженцы в количестве %d человек!\n", new1)
 		c.Population += new1
 	} else if sub == 2 {
-		hmnaid := rand.Int63n(150)
+		hmnaid := rand.Int63n(25)
 		fmt.Printf("В поселение прибыла гуманитарная помощь 🪂 в размере %d ресурсов\n", hmnaid)
 	} else {
 		fmt.Println("Сегодня ничего не произошло")
@@ -39,4 +39,5 @@ func (c *Settlement) ApplyEvent(sub int64) {
 type BuildingStats struct {
 	Price int
 	Bonus int
+	Type  string
 }

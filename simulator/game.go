@@ -12,38 +12,40 @@ var buildingEffects = map[string]BuildingStats{
 	"Ферма": {
 		Price: 50,
 		Bonus: 10,
+		Type:  "gold",
 	},
 	"Охотничий домик": {
 		Price: 20,
 		Bonus: 5,
+		Type:  "gold",
 	},
 	"Деревянный домик": {
 		Price: 15,
 		Bonus: 5,
+		Type:  "people",
 	},
 	"Кузница": {
 		Price: 25,
 		Bonus: 10,
+		Type:  "gold",
 	},
 }
 
 func MakingProfit(b map[string]bool, mySettlement *Settlement) {
-	if b["Ферма"] == true {
-		fmt.Printf("Ферма принесла %d ресурсов\n", buildingEffects["Ферма"].Bonus)
-		mySettlement.Resources += int64(buildingEffects["Ферма"].Bonus)
+	for name, isBuilt := range b {
+		if isBuilt {
+			effect := buildingEffects[name]
+			fmt.Printf("%s принес бонус: %d\n", name, effect.Bonus)
+
+			switch effect.Type {
+			case "gold":
+				mySettlement.Resources += int64(effect.Bonus)
+			case "people":
+				mySettlement.Population += int64(effect.Bonus)
+			}
+		}
 	}
-	if b["Охотничий домик"] == true {
-		fmt.Printf("Охотничий домик принес %d золота\n", buildingEffects["Охотничий домик"].Bonus)
-		mySettlement.Resources += int64(buildingEffects["Охотничий домик"].Bonus)
-	}
-	if b["Деревянный домик"] == true {
-		fmt.Printf("Деревянный домик принес %d людей\n", buildingEffects["Деревянный домик"].Bonus)
-		mySettlement.Population += int64(buildingEffects["Деревянный домик"].Bonus)
-	}
-	if b["Кузница"] == true {
-		fmt.Printf("Кузница принесла %d золота\n", buildingEffects["Кузница"].Bonus)
-		mySettlement.Resources += int64(buildingEffects["Кузница"].Bonus)
-	}
+
 }
 
 // Ферма + 10 к ресурсам, охотничий домик + 5 к ресурсам, деревянный дом - 10 к ресурасам
@@ -64,6 +66,10 @@ func Play() {
 		if !scanner.Scan() {
 			fmt.Println("Возникла ошибка при чтении твоей команды, попробуй еще раз")
 		}
+		if mySettlement.Population <= 0 {
+			fmt.Println("Игра завершена! Деревная вымерла")
+			return
+		}
 		text := scanner.Text()
 		fields := strings.Fields(text)
 		if len(fields) != 0 {
@@ -71,57 +77,38 @@ func Play() {
 				mySettlement.StatusReport()
 			} else if fields[0] == "строить" && len(fields) >= 2 {
 				buildingName := strings.Join(fields[1:], " ")
-				if buildingName == "Ферма" {
-					val := buildings["Ферма"]
-					if !val {
-						buildings["Ферма"] = true
-						fmt.Printf("Вы построили ферму за %d золота\n", buildingEffects["Ферма"].Price)
-						mySettlement.Resources -= int64(buildingEffects["Ферма"].Price)
-						history = append(history, "Вы построили ферму")
-					} else {
-						fmt.Println("Ферма уже построена!!!")
-					}
-				} else if buildingName == "Охотничий домик" {
-					val := buildings["Охотничий домик"]
-					if !val {
-						buildings["Охотничий домик"] = true
-						fmt.Printf("Вы построили охотничий домик за %d золота\n", buildingEffects["Охотничий домик"].Price)
-						mySettlement.Resources -= int64(buildingEffects["Охотничий домик"].Price)
-						history = append(history, "Вы построили охотничий домик")
-					} else {
-
-					}
-				} else if buildingName == "Деревянный домик" {
-					val := buildings["Деревянный домик"]
-					if !val {
-						buildings["Деревянный домик"] = true
-						fmt.Printf("Вы построили деревянный домик за %d золота\n", buildingEffects["Деревянный домик"].Price)
-						mySettlement.Resources -= int64(buildingEffects["Деревянный домик"].Price)
-						history = append(history, "Вы построили деревянный домик")
-					} else {
-
-					}
-				} else if buildingName == "Кузница" {
-					val := buildings["Кузница"]
-					if !val {
-						buildings["Кузница"] = true
-						fmt.Printf("Вы построили кузницу за %d золота\n", buildingEffects["Кузница"].Price)
-						mySettlement.Resources -= int64(buildingEffects["Кузница"].Price)
-						history = append(history, "Вы построили кузницу")
-					} else {
-
-					}
-				} else {
-					fmt.Println("Такого здания нет в списке")
+				stats, exists := buildingEffects[buildingName]
+				if !exists {
+					fmt.Println("Такого здания не сущесвует!")
+					continue
 				}
+				if buildings[buildingName] {
+					fmt.Println("Это здание уже есть в вашем поселении!")
+					continue
+				}
+				if mySettlement.Resources < int64(stats.Price) {
+					fmt.Printf("Недостаточно золота! Нужно %d, а у вас %d\n", stats.Price, mySettlement.Resources)
+					continue
+				}
+				buildings[buildingName] = true
+				mySettlement.Resources -= int64(stats.Price)
+				fmt.Printf("Вы успешно построили: %s\n", buildingName)
+				history = append(history, "Построено: "+buildingName)
 			} else if fields[0] == "ход" {
 				event := rand.Int63n(5)
 				mySettlement.ApplyEvent(event)
 				MakingProfit(buildings, &mySettlement)
 			} else if fields[0] == "история" {
-				for _, value := range history {
-					fmt.Println(value)
+				if len(history) == 0 {
+					fmt.Println("История пуста")
+				} else {
+					for _, value := range history {
+						fmt.Println(value)
+					}
 				}
+
+			} else {
+				fmt.Println("Команда неизвестна")
 			}
 		}
 	}
