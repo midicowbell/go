@@ -31,23 +31,6 @@ var buildingEffects = map[string]BuildingStats{
 	},
 }
 
-func MakingProfit(b map[string]bool, mySettlement *Settlement) {
-	for name, isBuilt := range b {
-		if isBuilt {
-			effect := buildingEffects[name]
-			fmt.Printf("%s принес бонус: %d\n", name, effect.Bonus)
-
-			switch effect.Type {
-			case "gold":
-				mySettlement.Resources += int64(effect.Bonus)
-			case "people":
-				mySettlement.Population += int64(effect.Bonus)
-			}
-		}
-	}
-
-}
-
 // Ферма + 10 к ресурсам, охотничий домик + 5 к ресурсам, деревянный дом - 10 к ресурасам
 // Кузница + 10 к ресурсам
 
@@ -58,9 +41,12 @@ func Play() {
 	fmt.Println("С помощью команды статус можно вывести статус вашего поселения")
 	fmt.Println("С помощью команды история можно вывести список ваших изменений")
 	fmt.Println("С помощью команды ход можно перейти в другой день")
-	mySettlement := Settlement{Name: "Моя Деревня", Resources: 100, Population: 10, Status: true}
+	buildingss := make([]Building, 0, 10)
+	builtBuildings := map[string]bool{"Ферма": false, "Охотничий домик": false, "Деревянный домик": false, "Кузница": false}
+	mySettlement := Settlement{Name: "Моя Деревня", Resources: 100, Population: 10, Buildings: buildingss, BuiltBuildings: builtBuildings}
+	buildBuildings := map[string]func() Building{"Ферма": func() Building { return NewFarm() }, "Шахта": func() Building { return NewMine() }, "Деревянный домик": func() Building { return NewHouse() }}
 	history := make([]string, 0, 10)
-	buildings := map[string]bool{"Ферма": false, "Охотничий домик": false, "Деревянный домик": false, "Кузница": false}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		if !scanner.Scan() {
@@ -82,7 +68,12 @@ func Play() {
 					fmt.Println("Такого здания не сущесвует!")
 					continue
 				}
-				if buildings[buildingName] {
+				createFunc, existsInFactory := buildBuildings[buildingName]
+				if !existsInFactory {
+					fmt.Println("Чертеж для этого здания еще не готов!")
+					continue
+				}
+				if mySettlement.BuiltBuildings[buildingName] {
 					fmt.Println("Это здание уже есть в вашем поселении!")
 					continue
 				}
@@ -90,14 +81,17 @@ func Play() {
 					fmt.Printf("Недостаточно золота! Нужно %d, а у вас %d\n", stats.Price, mySettlement.Resources)
 					continue
 				}
-				buildings[buildingName] = true
+
+				newBuilding := createFunc()
+				mySettlement.Buildings = append(mySettlement.Buildings, newBuilding)
+				mySettlement.BuiltBuildings[buildingName] = true
 				mySettlement.Resources -= int64(stats.Price)
 				fmt.Printf("Вы успешно построили: %s\n", buildingName)
 				history = append(history, "Построено: "+buildingName)
 			} else if fields[0] == "ход" {
 				event := rand.Int63n(5)
 				mySettlement.ApplyEvent(event)
-				MakingProfit(buildings, &mySettlement)
+				mySettlement.MakingProfit()
 			} else if fields[0] == "история" {
 				if len(history) == 0 {
 					fmt.Println("История пуста")
@@ -107,6 +101,9 @@ func Play() {
 					}
 				}
 
+			} else if fields[0] == "выход" {
+				fmt.Println("Завершаю игру! Ваша статистика: ")
+				mySettlement.StatusReport()
 			} else {
 				fmt.Println("Команда неизвестна")
 			}
