@@ -1,13 +1,19 @@
 package main
 
 import (
-	"smartHome/smarthome"
+	"messengers/messenger"
 )
 
 func main() {
-	lamp := smarthome.Lamp{}
-	cond := smarthome.AirConditioner{}
-	smarthome.ManageDevice(lamp)
-	smarthome.ManageDevice(cond)
+	t1 := messenger.Telegram{
+		Username: "Jack",
+	}
+	w1 := messenger.WhatsApp{}
+	slice := make([]messenger.Messenger, 0, 2)
+	slice = append(slice, t1)
+	slice = append(slice, w1)
 
+	for _, value := range slice {
+		value.SendMessage("Привет")
+	}
 }
