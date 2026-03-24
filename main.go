@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"study/simulator"
 )
 
 func main() {
-	simulator.Play()
+	err := simulator.Play()
+	if err != nil {
+		fmt.Printf("Ошибка: %s", err.Error())
+	}
 }
