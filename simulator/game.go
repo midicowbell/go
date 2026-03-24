@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -34,7 +35,7 @@ var buildingEffects = map[string]BuildingStats{
 // Ферма + 10 к ресурсам, охотничий домик + 5 к ресурсам, деревянный дом - 10 к ресурасам
 // Кузница + 10 к ресурсам
 
-func Play() {
+func Play() error {
 	fmt.Println("------Симулятор поселения------")
 	fmt.Println("Список доступных комманд: сторить [здание], статус, история, ход")
 	fmt.Println("С помощью команды сторить можно возвести новое здание")
@@ -50,11 +51,11 @@ func Play() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		if !scanner.Scan() {
-			fmt.Println("Возникла ошибка при чтении твоей команды, попробуй еще раз")
+			return errors.New("Не удалось прочитать текст")
 		}
 		if mySettlement.Population <= 0 {
 			fmt.Println("Игра завершена! Деревная вымерла")
-			return
+			return nil
 		}
 		text := scanner.Text()
 		fields := strings.Fields(text)
@@ -104,6 +105,7 @@ func Play() {
 			} else if fields[0] == "выход" {
 				fmt.Println("Завершаю игру! Ваша статистика: ")
 				mySettlement.StatusReport()
+				return nil
 			} else {
 				fmt.Println("Команда неизвестна")
 			}

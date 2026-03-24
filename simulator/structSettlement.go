@@ -20,8 +20,12 @@ func (c Settlement) StatusReport() {
 
 }
 func (s *Settlement) MakingProfit() {
-	for _, value := range s.Buildings {
-		value.CollectIncome(s)
+	if len(s.Buildings) == 0 {
+		fmt.Println("У вас нет построек, на этом ходу вы ничего не получаете")
+	} else {
+		for _, value := range s.Buildings {
+			value.CollectIncome(s)
+		}
 	}
 
 }
@@ -38,6 +42,7 @@ func (c *Settlement) ApplyEvent(sub int64) {
 	} else if sub == 2 {
 		hmnaid := rand.Int63n(25)
 		fmt.Printf("В поселение прибыла гуманитарная помощь 🪂 в размере %d ресурсов\n", hmnaid)
+		c.Resources += hmnaid
 	} else {
 		fmt.Println("Сегодня ничего не произошло")
 	}
@@ -67,7 +72,7 @@ func NewFarm() Farm {
 }
 
 func (f Farm) CollectIncome(s *Settlement) {
-	fmt.Printf("Ваша ферма принесла %d золота", f.Bonus)
+	fmt.Printf("Ваша ферма принесла %d золота\n", f.Bonus)
 	s.Resources += f.Bonus
 }
 
@@ -78,7 +83,7 @@ type Mine struct {
 }
 
 func (m Mine) CollectIncome(s *Settlement) {
-	fmt.Printf("Ваша шахта принесла %d золота", m.Bonus)
+	fmt.Printf("Ваша шахта принесла %d золота\n", m.Bonus)
 	s.Resources += m.Bonus
 }
 
@@ -105,6 +110,6 @@ func NewHouse() House {
 }
 
 func (h House) CollectIncome(s *Settlement) {
-	fmt.Printf("Ваш домик принес %d жителей", h.Bonus)
+	fmt.Printf("Ваш домик принес %d жителей\n", h.Bonus)
 	s.Population += h.Bonus
 }
