@@ -3,34 +3,45 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/rand/v2"
+	"math/rand"
+	"study/logs"
+	"sync"
 	"time"
 )
 
-func SpamBot(ctx context.Context, id int32) {
-	for {
-		countLetters := rand.IntN(20)
-		select {
-		case <-ctx.Done():
-			fmt.Printf("Спам-бот с ID [%d] прекратил свою работу\n", id)
-			return
-		default:
-			fmt.Printf("Спам-бот с ID [%d] отправил %d письмем\n", id, countLetters)
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-}
-
 func main() {
-	parentContext, parentCancel := context.WithCancel(context.Background())
-	for i := 0; i < 3; i++ {
-		genId := rand.Int32()
-		go SpamBot(parentContext, genId)
+	mtx := sync.RWMutex{}
+	wgSender := sync.WaitGroup{}
+	wgWorker := sync.WaitGroup{}
+	ctxGenerator, ctxCancel := context.WithCancel(context.Background())
+	logStats := make(map[int]string)
+	logChan := make(chan logs.LogEntry)
+	for i := 0; i < 10; i++ {
+		wgSender.Add(1)
+		go func() {
+			defer wgSender.Done()
+			logs.Generator(ctxGenerator, rand.Int(), logChan)
+		}()
 	}
+	go func() {
+		wgSender.Wait()
+		close(logChan)
+	}()
+	for i := 0; i < 5; i++ {
+		wgWorker.Add(1)
+		go logs.Worker(i, logChan, logStats, &mtx, &wgWorker)
+	}
+	for i := 0; i < 5; i++ {
+		time.Sleep(1 * time.Second)
+		mtx.RLock()
+		fmt.Printf("Текущее состояние лога на %d секунду: %v\n", i, logStats)
+		mtx.RUnlock()
+	}
+	ctxCancel()
+	wgWorker.Wait()
 
-	time.Sleep(2 * time.Second)
-
-	parentCancel()
-
-	time.Sleep(200 * time.Millisecond)
+	fmt.Println("Итоговые логи:")
+	for key, value := range logStats {
+		fmt.Printf("Service %d: %s\n", key, value)
+	}
 }

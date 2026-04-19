@@ -1,0 +1,20 @@
+timee := time.Now()
+	like := likes.LikeStorage{}
+	wg := sync.WaitGroup{}
+	for i := 0; i < 100000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			like.AddLikes(i * (i + 1))
+		}()
+	}
+
+	for i := 0; i < 10000000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			like.GetLikes()
+		}()
+	}
+	wg.Wait()
+	fmt.Println(time.Since(timee))
