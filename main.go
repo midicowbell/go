@@ -1,13 +1,22 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"study/simulator"
+	"study/sql"
 )
 
 func main() {
-	err := simulator.Play()
+	ctx := context.Background()
+	conn, err := sql.CreateConnection(ctx)
 	if err != nil {
-		fmt.Printf("Ошибка: %s", err.Error())
+		fmt.Println(err)
 	}
+	if err := sql.CreateTables(ctx, conn); err != nil {
+		fmt.Println(err)
+	}
+	if err := sql.InsertRow(*conn, ctx); err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("строка успешно добалвена")
 }
